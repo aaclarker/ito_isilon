@@ -103,6 +103,10 @@ list_SMB() {
 curl -k -b @cookiefile ${HTTP}/platform/1/protocols/smb/shares
 }
 
+get_SMB() {
+curl -k -b @cookiefile ${HTTP}/platform/1/protocols/smb/shares/$1
+}
+
 # Create NFS export
 # $1 = name of share
 # $2 = names of clients
@@ -161,6 +165,12 @@ case "$1" in
 		;;
 	delete_nfs)
 		delete_NFS $2
+		;;
+	list_SMB)
+		list_SMB
+		;;
+	get_SMB)
+		get_SMB $2
 		;;
 	delete_smb)
 		delete_SMB $2
