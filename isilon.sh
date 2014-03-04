@@ -11,13 +11,13 @@ echo '{
 "username": "admin",
 "password": "administrator",
 "services": ["platform","namespace"]
-}' > auth.json
+}' > json/auth.json
 }
 
 # Create session with Isilon server by saving authorization cookie in cookiefile
 connect() {
 curl -k --header "Content-Type: application/json" -c cookiefile \
--X POST -d @auth.json ${HTTP}/session/1/session
+-X POST -d @json/auth.json ${HTTP}/session/1/session
 }
 
 # Disconnect session
@@ -34,17 +34,32 @@ curl -k -b @cookiefile ${HTTP}/session/1/session?isisessid
 # NFS Section
 #############################
 
-# Set Active Directory domain for NFS
+# Set Active Directory domain
 set_domain() {
 
 echo '{
 "name": "itoxygen.com",
 "user": "linuxauth",
 "password": "Kew33naw"
-}' > domain.json
+}' > json/domain.json
 
 curl -k --header "Content-Type: application/json" -b cookiefile \
--X POST -d @domain.json -X POST ${HTTP}/platform/1/auth/providers/ads
+-X POST -d @json/domain.json -X POST ${HTTP}/platform/1/auth/providers/ads
+}
+
+get_zones() {
+curl -k -b @cookiefile ${HTTP}/platform/1/zones
+}
+
+create_zone() {
+
+echo '{
+"name": "Active-Directory-Zone",
+"auth_providers": ["lsa-activedirectory-provider:itoxygen.com"]
+}' > json/domain.json
+
+curl -k --header "Content-Type: application/json" -b cookiefile \
+-X POST -d @json/domain.json -X POST ${HTTP}/platform/1/zones
 }
 
 # Create NFS export
@@ -61,11 +76,11 @@ echo "{
 \"paths\": [\"/ifs/${SHARE_NAME}\"],
 \"read_only_clients\": [\"\"],
 \"read_write_clients\": [\"\"]
-}" > create_export_${SHARE_NAME}.json
+}" > json/create_export_${SHARE_NAME}.json
 
 # POST share
 curl -k --header "Content-Type: application/json" -b cookiefile \
--X POST -d @create_export_${SHARE_NAME}.json -X POST ${HTTP}/platform/1/protocols/nfs/exports
+-X POST -d @json/create_export_${SHARE_NAME}.json -X POST ${HTTP}/platform/1/protocols/nfs/exports
 }
 
 # List all NFS shares
@@ -101,11 +116,11 @@ echo '{
 "path": "/example/",
 "name": "example",
 "description": "example",
-}' > create_export_${SHARE_NAME}.json
+}' > json/create_export_${SHARE_NAME}.json
 
 # POST share
 curl -k --header "Content-Type: application/json" -b cookiefile \
--X POST -d @create_export_${SHARE_NAME}.json -X POST ${HTTP}/platform/1/protocols/smb/shares
+-X POST -d @json/create_export_${SHARE_NAME}.json -X POST ${HTTP}/platform/1/protocols/smb/shares
 }
 
 
@@ -134,10 +149,10 @@ echo Received: $4
 }
 
 case "$1" in
-        connect)
-       		cookie_file
-	        connect
-	        ;;
+	connect)
+		cookie_file
+		connect
+		;;
 	disconnect)
 		disconnect
 		;;
@@ -147,14 +162,16 @@ case "$1" in
 	delete_nfs)
 		delete_NFS $2
 		;;
-        delete_smb)
-                delete_SMB $2
-                ;;
-	test)
-		test "$@"
+	delete_smb)
+		delete_SMB $2
 		;;
+	# test)
+		# test "$@"
+		# ;;
 	testing)
-		set_domain
+		# set_domain
+		create_zone
+		get_zones
 		;;
 	*)
 		echo "Please enter a valid command"
