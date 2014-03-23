@@ -88,6 +88,11 @@ list_NFS() {
 curl -k -b @cookiefile ${HTTP}/platform/1/protocols/nfs/exports
 }
 
+# Get specific NFS share
+get_NFS() {
+curl -k -b @cookiefile ${HTTP}/platform/1/protocols/nfs/exports/$1
+}
+
 # Delete specified NFS share
 # $1 = id of share to delete
 delete_NFS() {
@@ -107,7 +112,7 @@ get_SMB() {
 curl -k -b @cookiefile ${HTTP}/platform/1/protocols/smb/shares/$1
 }
 
-# Create NFS export
+# Create SMB export
 # $1 = name of share
 # $2 = names of clients
 create_SMB() {
@@ -116,29 +121,32 @@ CLIENTS=$2
 
 # Create json file detailing share
 echo '{
-"id": "1",
-"path": "/example/",
-"name": "example",
-"description": "example",
-}' > json/create_export_${SHARE_NAME}.json
+"name" : "test7",
+"ntfs_acl_support" : true,
+"oplocks" : true,
+"path" : "/ifs/home/test6",
+"permissions" :
+[
+{
+"permission" : "read",
+"permission_type" : "allow",
+"trustee" :
+{
+"id" : "SID:S-1-1-0",
+"name" : "Everyone",
+"type" : "wellknown"
+}
+}
+],
+"run_as_root" : [],
+"strict_flush" : true,
+"strict_locking" : false
+}' > json/create_export_4.json
 
 # POST share
 curl -k --header "Content-Type: application/json" -b cookiefile \
--X POST -d @json/create_export_${SHARE_NAME}.json -X POST ${HTTP}/platform/1/protocols/smb/shares
+-X POST -d @json/create_export_4.json -X POST ${HTTP}/platform/1/protocols/smb/shares
 }
-
-
-# Running the script
-# cookie_file;
-# connect;
-# check_session;
-# create_NFS test4 test_user;
-# list_NFS;
-# delete_NFS 2;
-# list_NFS;
-# list_SMB;
-
-# disconnect;
 
 testing() {
 curl -k -b @cookiefile ${HTTP}/platform/1/auth/providers/summary
@@ -172,12 +180,18 @@ case "$1" in
 	get_SMB)
 		get_SMB $2
 		;;
+	list_NFS)
+		list_NFS
+		;;
+	get_NFS)
+		get_NFS $2
+		;;
 	delete_smb)
 		delete_SMB $2
 		;;
-	# test)
-		# test "$@"
-		# ;;
+	create_SMB)
+		create_SMB
+		;;
 	testing)
 		# set_domain
 		create_zone
